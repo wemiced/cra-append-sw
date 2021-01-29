@@ -6,7 +6,7 @@ const Dotenv = require("dotenv-webpack");
 const program = require("commander");
 const path = require("path");
 
-const BUILD_SW_FILE_PATH = "build/service-worker.js";
+const BUILD_SW_FILE_PATH = "builds/dev/service-worker.js";
 const BUNDLE_FILE_NAME = "bundle.js";
 
 /**
@@ -25,7 +25,8 @@ program
     "output mode [dev|build|replace]",
     /^(dev|build|replace)$/i
   )
-  .action(function(file) {
+  .option("-p, --path <folder_path>", "path to your build folder", "./build")
+  .action(function (file) {
     if (program.mode === "dev") {
       process.env.BABEL_ENV = "development";
       process.env.NODE_ENV = "development";
@@ -35,7 +36,7 @@ program
     }
 
     if (program.skipCompile) {
-      read(file).then(result => append(result, file));
+      read(file).then((result) => append(result, file));
     } else {
       compile(file).then(({ result, stats }) => append(result, file));
     }
@@ -54,7 +55,7 @@ function compile(entry) {
     entry: [entry],
     output: {
       filename: BUNDLE_FILE_NAME,
-      path: "/"
+      path: "/",
     },
     module: {
       rules: [
@@ -69,16 +70,16 @@ function compile(entry) {
                   "react-app",
                   {
                     targets: {
-                      browsers: ["defaults"]
-                    }
-                  }
-                ]
+                      browsers: ["defaults"],
+                    },
+                  },
+                ],
               ],
-              plugins: ["@babel/plugin-transform-runtime"]
-            }
-          }
-        }
-      ]
+              plugins: ["@babel/plugin-transform-runtime"],
+            },
+          },
+        },
+      ],
     },
     plugins: [
       new Dotenv({
@@ -86,10 +87,10 @@ function compile(entry) {
         safe: false, // load .env.example (defaults to "false" which does not use dotenv-safe)
         silent: true,
         systemvars: true, // Load all system variables and REACT .env as well
-        expand: true // This option make it possible to use global variables inside your .env file e.g. REACT_APP_VERSION=$npm_package_version
-      })
+        expand: true, // This option make it possible to use global variables inside your .env file e.g. REACT_APP_VERSION=$npm_package_version
+      }),
       // new webpack.optimize.UglifyJsPlugin()
-    ]
+    ],
   });
 
   compiler.outputFileSystem = new MemoryFs();
@@ -103,7 +104,7 @@ function compile(entry) {
           new Error(
             stats.toString({
               errorDetails: true,
-              warnings: true
+              warnings: true,
             })
           )
         );
@@ -147,12 +148,12 @@ function append(code, file) {
     return writeFile(code, `public/${filename}`);
   } else if (program.mode === "build") {
     const filename = path.basename(file);
-    return writeFile(code, `build/${filename}`);
+    return writeFile(code, `builds/dev/${filename}`);
   } else if (program.mode === "replace") {
     const filename = path.basename(file);
     return writeFile(code, BUILD_SW_FILE_PATH);
   } else {
-    // Append to "build/service-worker.js"
+    // Append to "builds/dev/service-worker.js"
     return new Promise((resolve, reject) => {
       // Read exisitng SW file
       fs.readFile(BUILD_SW_FILE_PATH, "utf8", (error, data) => {
@@ -164,7 +165,7 @@ function append(code, file) {
         const result = data + code;
 
         // Write modified SW file
-        fs.writeFile(BUILD_SW_FILE_PATH, result, "utf8", error => {
+        fs.writeFile(BUILD_SW_FILE_PATH, result, "utf8", (error) => {
           if (error) {
             reject(error);
           }
@@ -178,7 +179,7 @@ function append(code, file) {
 
 function writeFile(content, file) {
   return new Promise((resolve, reject) => {
-    fs.writeFile(file, content, "utf8", error => {
+    fs.writeFile(file, content, "utf8", (error) => {
       if (error) {
         reject(error);
       }
